@@ -1,4 +1,3 @@
-"use client"
 import { useEffect, useState } from "react"
 import TaskList from "./TaskList"
 
@@ -6,7 +5,6 @@ interface Task {
   id: number
   title: string
   completed: boolean
-  lastUpdated: string
 }
 
 export default function App() {
@@ -14,17 +12,16 @@ export default function App() {
   const [totalPoints, setTotalPoints] = useState(0)
 
   useEffect(() => {
-    // Load tasks and points from localStorage
     const storedTasks = localStorage.getItem("tasks")
     const storedPoints = localStorage.getItem("totalPoints")
+    const storedDate = localStorage.getItem("lastUpdatedDate")
 
     if (storedTasks) {
       setTasks(JSON.parse(storedTasks))
     } else {
       setTasks([
-        { id: 1, title: "GitHub Streak 🔥", completed: false, lastUpdated: new Date().toISOString() },
-        { id: 2, title: "LeetCode Streak 🚀", completed: false, lastUpdated: new Date().toISOString() },
-        { id: 3, title: "Pookie's DSA 💞", completed: false, lastUpdated: new Date().toISOString() }
+        { id: 1, title: "GitHub Streak 🔥", completed: false },
+        { id: 2, title: "DSA Streak 🚀", completed: false }
       ])
     }
 
@@ -32,7 +29,7 @@ export default function App() {
       setTotalPoints(Number.parseInt(storedPoints, 10))
     }
 
-    resetTasksIfNeeded()
+    resetPointsIfNeeded(storedDate)
   }, [])
 
   useEffect(() => {
@@ -43,43 +40,38 @@ export default function App() {
     localStorage.setItem("totalPoints", totalPoints.toString())
   }, [totalPoints])
 
-  const resetTasksIfNeeded = () => {
-    const now = new Date()
-    const storedTasks = localStorage.getItem("tasks")
+  const resetPointsIfNeeded = (storedDate: string | null) => {
+    const today = new Date().toDateString()
 
-    if (storedTasks) {
-      const tasksData: Task[] = JSON.parse(storedTasks)
-      const updatedTasks = tasksData.map((task) => {
-        const lastUpdated = new Date(task.lastUpdated)
-        if (now.getDate() !== lastUpdated.getDate()) {
-          return { ...task, completed: false, lastUpdated: now.toISOString() }
-        }
-        return task
-      })
+    if (storedDate !== today) {
+      let deductedPoints = 0
 
-      setTasks(updatedTasks)
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks))
+      const storedTasks = localStorage.getItem("tasks")
+      if (storedTasks) {
+        const tasksData: Task[] = JSON.parse(storedTasks)
+        
+        tasksData.forEach((task) => {
+          if (!task.completed) {
+            deductedPoints -= 10
+          }
+        })
+      }
+
+      setTotalPoints((prev) => prev + deductedPoints) 
+      setTasks((prevTasks) => prevTasks.map((task) => ({ ...task, completed: false })))
+
+      localStorage.setItem("lastUpdatedDate", today)
     }
   }
 
   const handleTaskCompletion = (taskId: number, completed: boolean) => {
-    const now = new Date()
-    let pointsChange = 0
-
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === taskId) {
-        if (!task.completed && completed) {
-          pointsChange = 10 // Completing a task adds 10 points
-        } else if (task.completed && !completed) {
-          pointsChange = -10 // Unchecking a completed task removes 10 points
-        }
-        return { ...task, completed, lastUpdated: now.toISOString() }
-      }
-      return task
-    })
+    const updatedTasks = tasks.map((task) =>
+      task.id === taskId ? { ...task, completed } : task
+    )
 
     setTasks(updatedTasks)
-    setTotalPoints((prev) => prev + pointsChange)
+
+    setTotalPoints((prev) => prev + (completed ? 10 : -10))
   }
 
   return (
