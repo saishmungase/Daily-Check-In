@@ -52,7 +52,7 @@ export default function App() {
         
         tasksData.forEach((task) => {
           if (!task.completed) {
-            deductedPoints -= 10
+            deductedPoints -= 1
           }
         })
       }
@@ -71,7 +71,7 @@ export default function App() {
 
     setTasks(updatedTasks)
 
-    setTotalPoints((prev) => prev + (completed ? 10 : -10))
+    setTotalPoints((prev) => prev + (completed ? 1 : -1))
   }
 
   return (
